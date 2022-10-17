@@ -1,0 +1,20 @@
+[
+    {
+        "name": "Контракты - АДМИН",
+        "url": "http://159.223.0.234:5000/",
+        "schema_name": "contract",
+        "info_code": "nsi",
+        "interval": 30,
+        "user_name": "contract_admin",
+        "password": "contract_admin"
+    },
+    {
+        "name": "Contract",
+        "url": "http://159.223.0.234:5000/",
+        "schema_name": "contract",
+        "info_code": "nsi",
+        "interval": 30,
+        "user_name": "contract_developer",
+        "password": "contract_developer"
+    }
+]

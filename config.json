@@ -16,5 +16,14 @@
         "interval": 30,
         "user_name": "contract_developer",
         "password": "contract_developer"
+    },
+    {
+        "name": "Локальный админ",
+        "url": "http://127.0.0.1:5001/",
+        "schema_name": "contract",
+        "info_code": "nsi",
+        "interval": 30,
+        "user_name": "Superadmin",
+        "password": "Kirill!981"
     }
 ]

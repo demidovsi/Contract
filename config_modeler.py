@@ -28,7 +28,7 @@ class Form(QWidget):
         layout_button = QtWidgets.QHBoxLayout()
 
         self.choose_button = QtWidgets.QPushButton(cd.icon_do, '')
-        self.choose_button.clicked.connect(self.choose_button_click)
+        self.choose_button.clicked.connect(self.apply_click)
         layout_button.addWidget(self.choose_button)
 
         self.loadFile_button = QtWidgets.QPushButton(cd.iconOpen, '')
@@ -324,7 +324,7 @@ class Form(QWidget):
             if item.rowCount() == 0:
                 self.selected_ind = self.selected_ind.parent()  # индекс родителя
 
-    def choose_button_click(self):
+    def apply_click(self):
         item = self.root_model.itemFromIndex(self.selected_ind)  # 0-го уровня заданной колонки (или 0-й колонки)
         ind = item.index()
         ind = ind.sibling(ind.row(), 1)

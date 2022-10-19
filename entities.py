@@ -1,12 +1,14 @@
-from PyQt5.QtWidgets import (QWidget, QLabel, QApplication, QSpinBox, QComboBox, QPushButton, QLineEdit)
+from PyQt5.QtWidgets import (QWidget, QLabel, QApplication, QSpinBox, QComboBox, QPushButton, QLineEdit, QGroupBox,
+                             QTabWidget)
 from PyQt5.QtGui import *
 from PyQt5 import (QtWidgets, QtCore)
 from PyQt5.QtCore import Qt
 import common_data as cd
 import json
 import typeobject
-# import pasport_entity
+import passport_entity
 import datetime
+import pagecontrol
 
 
 class Entities(QWidget):
@@ -17,7 +19,7 @@ class Entities(QWidget):
     exist_table = False
     exist_izm = 0
     level = 0
-    forms = []
+    forms = list()
     ind0 = None  # QStandardItem строки 0-го уровня для выделенной строки
     ind1 = None
     needMakeObnov = True
@@ -32,19 +34,23 @@ class Entities(QWidget):
         super(QWidget, self).__init__()
 
         self.splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
+        self.splitter.setHandleWidth(3)
         panelLeft = QtWidgets.QFrame(self.splitter)
         # контейнер для кнопок
         layout_button_oper = QtWidgets.QHBoxLayout()
         # создать таблицу в БД
         self.create_table_button = QtWidgets.QPushButton(cd.iconCreate, '')
+        self.create_table_button.setEnabled(False)
         self.create_table_button.clicked.connect(self.create_table_click)
         layout_button_oper.addWidget(self.create_table_button)
         # удалить таблицу в БД
         self.delete_table_button = QtWidgets.QPushButton(cd.iconDelete, '')
+        self.delete_table_button.setEnabled(False)
         self.delete_table_button.clicked.connect(self.delete_table_click)
         layout_button_oper.addWidget(self.delete_table_button)
         # создать все объекты БД
         self.create_allObjectDB_button = QtWidgets.QPushButton(cd.iconSave, '')
+        self.create_allObjectDB_button.setEnabled(False)
         self.create_allObjectDB_button.clicked.connect(self.create_all_click)
         layout_button_oper.addWidget(self.create_allObjectDB_button)
         # удалить все объекты БД
@@ -115,12 +121,11 @@ class Entities(QWidget):
         layout_left.addLayout(layout_table)
         panelLeft.setLayout(layout_left)
 # панель паспорта
-        self.panel = QtWidgets.QFrame()
-        self.panel.setFrameShape(QtWidgets.QFrame.StyledPanel)
-        self.panel.setFrameShadow(QtWidgets.QFrame.Plain)
+        self.widget = QWidget()
+        self.page_control = pagecontrol.PageControl(self.widget, QTabWidget.North)
 
         self.splitter.addWidget(panelLeft)
-        self.splitter.addWidget(self.panel)
+        self.splitter.addWidget(self.page_control)
 
 # контейнер левой части (панель кнопок и дерево)
         layout1 = QtWidgets.QVBoxLayout(parent)
@@ -134,6 +139,7 @@ class Entities(QWidget):
         # self.layout.addLayout(layout_left)
         # self.layout.addWidget(self.splitter)
 
+        self.forms = []
         self.define_visible_button()
         self.change_language()
 # запомненные параметры
@@ -176,10 +182,10 @@ class Entities(QWidget):
         st_name.append(cd.get_text('Имя сущности/параметра', id_text=5, key='entities'))
         st_name.append(cd.get_text('Статус', id_text=15, key='main'))
         st_name.append(cd.get_text('Объект', id_text=16, key='main'))
-        st_name.append('ID')
+        st_name.append('ID')  # 3
         st_name.append('Code')
         st_name.append(cd.get_text('Кол-во\nобъектов', id_text=21, key='main'))
-        st_name.append(cd.get_text('Форма', id_text=17, key='main'))
+        st_name.append(cd.get_text('Форма', id_text=17, key='main'))  # 6
         st_name.append(cd.get_text('Таблица', id_text=18, key='main'))
         st_name.append(cd.get_text('Представление', id_text=19, key='main'))
         st_name.append(cd.get_text('Функция записи', id_text=20, key='main'))
@@ -192,6 +198,8 @@ class Entities(QWidget):
 
     def make_obnov_click(self):
         cd.load_objects()
+        for form in self.forms:  # паспорта ENTITY
+            form.refresh()
         self.needMakeObnov = True
         self.make_obnov()
 
@@ -255,7 +263,7 @@ class Entities(QWidget):
         if not self.selected_text1:
             self.selected_text1 = cd.settings.value("entities_selected_text_child", '')
 
-    def make_obnov(self, clearpasports=True):
+    def make_obnov(self):
         admin = cd.is_user_admin()
         self.create_table_button.setVisible(admin)
         self.delete_table_button.setVisible(admin)
@@ -271,8 +279,6 @@ class Entities(QWidget):
                 self.time_calc.setText(cd.get_text("T чтения = %.3f сек", id_text=25, key='main') % dest)
             self.needMakeObnov = False
             self.exist = False
-            if clearpasports:
-                self.close_all_forms()
             self.root_model.setRowCount(0)
             self.table.setColumnHidden(2, True)  # колонка с объектом
             self.table.setColumnHidden(6, True)  # форма
@@ -348,9 +354,9 @@ class Entities(QWidget):
         err_connect = cd.txt_error_connection != ''
         self.makeObnov_button.setEnabled(not err_connect)
         self.create_object_button.setEnabled(not err_connect)
-        self.create_table_button.setEnabled(not err_connect)
-        self.delete_table_button.setEnabled(not err_connect)
-        self.create_allObjectDB_button.setEnabled(not err_connect)
+        # self.create_table_button.setEnabled(not err_connect)
+        # self.delete_table_button.setEnabled(not err_connect)
+        # self.create_allObjectDB_button.setEnabled(not err_connect)
         try:
             if self.ind0 is not None:
                 ind = self.ind0.sibling(self.ind0.row(), 6)
@@ -384,8 +390,9 @@ class Entities(QWidget):
             self.qrow = int(self.root_model.data(ind))  # количество строк
             self.row_count.setMaximum(self.qrow)
             self.row_from.setMaximum(self.qrow - 1)
+            if self.qrow < 100:
+                self.row_count.setValue(self.qrow)
             # print(self.root_model.data(ind))
-
             if self.root_model.data(modal_index.parent()):
                 self.ind1 = modal_index
                 ind = modal_index.parent()  # индекс родителя
@@ -408,6 +415,9 @@ class Entities(QWidget):
             ind2 = self.root_model.sibling(self.ind0.row(), 4, self.ind0)
             self.object_code = self.root_model.data(ind2)
             self.define_visible_button()
+            if self.root_model.data(modal_index.parent()):
+                self.create_passport()
+
 
     def isTop(self):
         return self.arow == 0
@@ -420,14 +430,14 @@ class Entities(QWidget):
         self.selected_ind = self.selected_ind.sibling(self.arow+1, 0)
         self.selection_change(self.selected_ind)
         self.table.setCurrentIndex(self.selected_ind)
-        self.create_pasport()
+        self.create_passport()
 
     def up_click(self):
         # перейти на предыдущий объект
         self.selected_ind = self.selected_ind.sibling(self.arow-1, 0)
         self.selection_change(self.selected_ind)
         self.table.setCurrentIndex(self.selected_ind)
-        self.create_pasport()
+        self.create_passport()
 
     def show_data(self):
         if self.exist:
@@ -479,74 +489,42 @@ class Entities(QWidget):
             self.table.expand(QModalIndex.sibling(QModalIndex.row(), 0))
             self.show_count_table()
 
-    def create_pasport(self):
-        return 
-        QApplication.setOverrideCursor(Qt.BusyCursor)  # курсор ожидания
-        try:
-            ind = self.ind0.sibling(self.ind0.row(), 5)
-            form = self.root_model.data(ind)
-            if not form:
-                # form = pasport_entity.PasportEntity()
-                self.root_model.setData(ind, form)
-                self.forms.append(form)
-                form.formaParent = self
-            ind = self.ind1.sibling(self.ind1.row(), 3)
-            obj_id = self.root_model.data(ind)
-            form.show_data(self.object_code, self.selected_text1, obj_id)
-            form.minimumSize()
-            form.showNormal()
-            form.setFocus()
-        except Exception as err:
-            print('Entities', 'create_pasport', f"{err}")
-        QApplication.restoreOverrideCursor()  # восстановление курсора
-
     def create_all_click(self):
         ans, result = cd.send_rest(
             'NSI.Update_MDM/' + cd.schema_name + '/' + cd.info_code, 'PUT')
         if result:
             self.needMakeObnov = True
+            self.close_all_forms()
             self.make_obnov()
 
-    def create_object(self):
-        return 
-        # создание нового объекта
+    def make_passport(self, obj_id):
+        QApplication.setOverrideCursor(Qt.BusyCursor)  # курсор ожидания
         try:
-            ind = self.ind0.sibling(self.ind0.row(), 5)
-            form = self.root_model.data(ind)
-            if not form:
-                # form = pasport_entity.PasportEntity()
-                self.root_model.setData(ind, form)
-                self.forms.append(form)
-                form.formaParent = self
-            form.show_data(self.object_code, '', None)
-            form.showNormal()
-            form.setFocus()
-        except Exception as err:
-            print('Entities', 'create_object', f"{err}")
-
-    def show_inform_row(self):
-        # ind = self.ind0.sibling(self.ind0.row(), 5)
-        # form = self.root_model.data(ind)
-        # if form.obj_id:
-        #     ind = self.ind1.sibling(self.ind1.row(), 0)
-        #     self.root_model.setData(ind, form.field_sh_name.value)
-        # else:
-        # self.selected_text1 = form.field_sh_name.value
-        self.needMakeObnov = True
-        self.make_obnov()
-
-    def set_row_child_id(self, stID):
-        ind = cd.get_index(self.root_model, self.selected_text0, 0)
-        self.needMakeObnov = True
-        self.make_obnov(False)
-        item = self.root_model.itemFromIndex(ind)  # 0-го уровня заданной колонки (или 0-й колонки)
-        if item.hasChildren():  # найден 0-ой уровень и есть дети
-            for j in range(0, item.rowCount()):
-                ind = item.child(j).index()
-                if self.root_model.data(ind.sibling(ind.row(), 3)) == str(stID):
-                    self.table.setCurrentIndex(ind)  # сделать строку выбранной
-                    self.selection_change(ind)
+            title = self.object_code + ': ' + obj_id
+            exist = False
+            for i in range(self.page_control.tabs.count()):
+                if self.page_control.tabs.tabText(i) == title:
+                    exist = True
+                    self.page_control.setCurrentIndex(i)
                     break
+
+            if not exist:
+                tab = self.page_control.addTab(title)
+                form = passport_entity.PassportEntity(tab, self)
+                self.forms.append(form)
+                form.load_params(self.object_code)
+                form.show_data(obj_id)
+                self.page_control.setCurrentIndex(self.page_control.tabs.count() - 1)
+        except Exception as err:
+            print('Entities', 'make_passport', obj_id, f"{err}")
+        QApplication.restoreOverrideCursor()  # восстановление курсора
+
+    def create_passport(self):
+        self.make_passport(self.root_model.data(self.ind1.sibling(self.ind1.row(), 3)))
+
+    def create_object(self):
+        # создание нового объекта
+        self.make_passport('0')
 
     def create_table_click(self):
         data, result = cd.send_rest(
@@ -564,7 +542,6 @@ class Entities(QWidget):
             self.make_inform()
 
     def delete_table_click(self):
-        # item = self.root_model.item(self.ind0.row(), 0)  # нулевая колонка родителя
         object_code = self.root_model.data(self.root_model.sibling(self.ind0.row(), 4, self.ind0))
         q = cd.make_question(
             self,
@@ -588,12 +565,16 @@ class Entities(QWidget):
             cd.send_evt(cd.evt_delete_table_entity, self.form_parent)
 
     def close_all_forms(self):
-        for form in self.forms:
-            try:
-                form.close()
-            except Exception as err:
-                print('Entities', 'close_all_forms', f"{err}")
-        self.forms = []
+        i = self.page_control.tabs.count() - 1
+        while i >= 0:
+            self.page_control.tabs.removeTab(i)
+            i -= 1
+        i = len(self.forms) - 1
+        while i >= 0:
+            form = self.forms[i]
+            self.forms.pop(i)
+            del form
+            i -= 1
 
     def closeEvent(self, evt):
         self.close_all_forms()
@@ -609,7 +590,28 @@ class Entities(QWidget):
     def customEvent(self, evt):
         if evt.type() == cd.StatusOperation.idType:  # изменение состояния соединения PROXY
             n = evt.get_data()
-            if n == cd.evt_change_language:
+            if type(n) == dict:
+                if "command" in n:
+                    if n["command"] == "close_page":
+                        title = n["object_code"] + ': ' + str(n["obj_id"])
+                        for i in range(self.page_control.tabs.count()):
+                            if self.page_control.tabs.tabText(i) == title:
+                                self.page_control.tabs.removeTab(i)
+                                break
+                        for i in range(len(self.forms)):
+                            form = self.forms[i]
+                            if form.object_code == n["object_code"] and form.obj_id == n['obj_id']:
+                                self.forms.pop(i)
+                                del form
+                                break
+                    elif n["command"] == "new_object":
+                        title_current = n["object_code"] + ': 0'
+                        title = n["object_code"] + ': ' + str(n["obj_id"])
+                        for i in range(self.page_control.tabs.count()):
+                            if self.page_control.tabs.tabText(i) == title_current:
+                                self.page_control.tabs.setTabText(i, title)
+                                break
+            elif n == cd.evt_change_language:
                 self.change_language()
                 for form in self.forms:
                     cd.send_evt(n, form)

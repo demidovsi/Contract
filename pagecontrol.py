@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QWidget, QTabWidget, QVBoxLayout
 from PyQt5 import QtWidgets, QtGui
 
+
 class PageControl(QWidget):
 
     def __init__(self, parent, orient):
@@ -18,8 +19,9 @@ class PageControl(QWidget):
         self.setLayout(self.layout)
 
     def addTab(self, NameTab):
-        self.wid = QtWidgets.QWidget()
-        self.tab = self.tabs.addTab(self.wid, NameTab)
-        return self.wid
+        wid = QtWidgets.QWidget()
+        self.tabs.addTab(wid, NameTab)
+        return wid
+
     def setCurrentIndex(self, index):
         self.tabs.setCurrentIndex(index)

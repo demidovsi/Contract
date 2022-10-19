@@ -34,6 +34,10 @@ class Form(QMainWindow):
         self.setFont(QtGui.QFont('Arial', 11))
         cd.iconRefresh = self.style().standardIcon(QtWidgets.QStyle.SP_BrowserReload)
         cd.iconDelete = self.style().standardIcon(QtWidgets.QStyle.SP_DialogCancelButton)
+        cd.iconUp = self.style().standardIcon(QtWidgets.QStyle.SP_ArrowUp)
+        cd.iconDown = self.style().standardIcon(QtWidgets.QStyle.SP_ArrowDown)
+        cd.icon_left = self.style().standardIcon(QtWidgets.QStyle.SP_ArrowLeft)
+        cd.icon_right = self.style().standardIcon(QtWidgets.QStyle.SP_ArrowRight)
         cd.iconCreate = QIcon()
         cd.iconCreate.addFile('icons/Добавить.bmp')
         cd.icon_font = QIcon()
@@ -44,10 +48,6 @@ class Form(QMainWindow):
         cd.icon_minus.addFile('icons/удалить.bmp')
         cd.iconSave = self.style().standardIcon(QtWidgets.QStyle.SP_DialogSaveButton)
         cd.iconOpen = self.style().standardIcon(QtWidgets.QStyle.SP_DialogOpenButton)
-        cd.icon_left = QIcon()
-        cd.icon_left.addFile('icons/arrow_left.bmp')
-        cd.icon_right = QIcon()
-        cd.icon_right.addFile('icons/arrow_right.bmp')
 
         # определить адресацию RestProxy
         try:
@@ -187,8 +187,9 @@ class Form(QMainWindow):
         self.choosfont.setStatusTip(cd.get_text('Font', key='main', id_text=1))
         self.language.setText(cd.get_text("Choice of language", key='main', id_text=2))
         self.language.setStatusTip(cd.get_text("Choice of language", key='language', id_text=1))
-        self.page_control.tabs.setTabText(0, cd.get_text('Сводные расходы', id_text=7, key='form'))
+        self.page_control.tabs.setTabText(0, cd.get_text('Сущности', id_text=7, key='form'))
         self.reconnect.setText(cd.get_text("Reconnect", id_text=27, key='form'))
+        self.reconnect.setStatusTip(cd.get_text("Reconnect", id_text=27, key='form'))
         # self.page_control.tabs.setTabText(1, cd.get_text('Суточные расходы', id_text=8, key='form'))
         self.exitaction.setText(cd.get_text('Exit', id_text=6, key='main'))
         self.exitaction.setStatusTip(cd.get_text('Exit application', id_text=7, key='main'))
@@ -231,9 +232,9 @@ class Form(QMainWindow):
     def customEvent(self, evt):
         if evt.type() == cd.StatusOperation.idType:  # изменение состояния соединения с PROXY
             n = evt.get_data()
-            if n == cd.evt_cancel_connect:
+            if n == cd.evt_cancel_connect:  # пропадание связи REST
                 pass
-            elif n == cd.evt_refresh_connect:  # восстановление связи с REST
+            elif n == cd.evt_refresh_connect:  # восстановление связи REST
                 pass
             elif n == cd.evt_change_database:  # сменилась информация от Proxy
                 self.set_window_title(
@@ -250,6 +251,7 @@ class Form(QMainWindow):
             elif n == cd.evt_change_config_modeler:  # изменения в настройке моделера
                 self.set_window_title(
                     cd.version + cd.url + ' ' + cd.inform_from_proxy.replace("'", '"') + ' System=' + cd.schema_name)
+                self.entities.close_all_forms()
                 self.entities.make_obnov_click()
                 # cd.send_evt(n, self.one_day_form)
                 # self.one_day_form.read_data()
@@ -293,6 +295,5 @@ class Form(QMainWindow):
             self.config_modeler.form_parent = self
 
     def reconnect_click(self):
-        self.entities.needMakeObnov = True
-        cd.load_objects()
+        self.entities.make_obnov_click()
         self.page_control_changed(self)

@@ -8,7 +8,7 @@ import base64
 import time
 
 kirill = 'Kirill!981'
-version = ' (v1.3.12 2022-10-) '
+version = ' (v1.1.1 2022-10-) '
 settings = None
 
 app_lang = 'en'
@@ -16,13 +16,15 @@ texts = dict()
 width_form = 1200
 height_form = 800
 
-icon_font = None
 iconDelete = None
 iconCreate = None
-icon_minus = None
+iconUp = None
+iconDown = None
 iconOpen = None
 iconSave = None
 iconRefresh = None
+icon_font = None
+icon_minus = None
 icon_left = None
 icon_right = None
 icon_do = None
@@ -47,6 +49,7 @@ evt_refresh_connect = 1  # восстановление связи
 evt_change_mdm = 2  # изменения МДМ
 evt_change_database = 3  # изменение базы данных
 evt_change_config_modeler = 5  # изменения в настройке моделера
+evt_delete_table_entity = 6  # удалена таблица сущности
 
 mas_json_objects = []
 
@@ -415,6 +418,11 @@ def load_objects():
     return result, data
 
 
+def getTextfromAnswer(txt):
+    result = txt.replace('[', '').replace(']', '').replace('"', '')
+    return result.strip()
+
+
 def value_from_array(value, mas_json):
     if not (value in mas_json):
         return None
@@ -431,12 +439,17 @@ def translateFromBase(st):
     st = st.replace('~a2~', ',').replace('~a3~', '=').replace('~a4~', '"').replace('~a5~', "'")
     st = st.replace('~a6~', ':')
     return st
+#
+#
+# def translateToBase(st):
+#     st = st.replace('\n', '~LF~').replace('(', '~A~').replace(')', '~B~').replace('@', '~a1~')
+#     st = st.replace(',', '~a2~').replace('=', '~a3~').replace('"', '~a4~').replace("'", '~a5~')
+#     st = st.replace(':', '~a6~')
+#     return st
 
 
 def translateToBase(st):
-    st = st.replace('\n', '~LF~').replace('(', '~A~').replace(')', '~B~').replace('@', '~a1~')
-    st = st.replace(',', '~a2~').replace('=', '~a3~').replace('"', '~a4~').replace("'", '~a5~')
-    st = st.replace(':', '~a6~')
+    st = st.replace('\n', '~LF~').replace("'", "''").replace('"', "''")
     return st
 
 
@@ -453,4 +466,40 @@ def decode(key, enc):
 def is_user_admin():
     rights = decode(kirill, token)
     rights = json.loads(rights)
-    return 'admin' in rights[schema_name]
+    if '***' in rights:
+        return True
+    else:
+        return 'admin' in rights[schema_name]
+
+
+def is_null(val, default=0):
+    if not val:
+        return default
+    else:
+        return val
+
+
+def show_error_answer(ans, caption_text, detail_text='', onlyok=False):
+    # определение ошибки в {"error": , "text": } и ее вывод
+    result = True
+    try:
+        js = json.loads(ans)
+        if 'error' in js:
+            if js['error'] == 1:
+                result = False
+                QApplication.restoreOverrideCursor()  # вернуть нормальный курсор
+                make_question(None, caption_text + ': ' + detail_text, caption_text, js['text'], onlyok)
+        elif 'detail' in js:
+            result = False
+            QApplication.restoreOverrideCursor()  # вернуть нормальный курсор
+            make_question(None, caption_text + ': ' + detail_text, caption_text, str(js), onlyok)
+        elif 'error_sql' in js:
+            result = False
+            QApplication.restoreOverrideCursor()  # вернуть нормальный курсор
+            make_question(None, caption_text + ': ' + detail_text, caption_text, str(js), onlyok)
+    except Exception as err:
+        result = False
+        detail_text = detail_text + '\n' + f"{err}"
+        QApplication.restoreOverrideCursor()  # вернуть нормальный курсор
+        make_question(None, caption_text + ': ' + detail_text, caption_text, ans, onlyok)
+    return result

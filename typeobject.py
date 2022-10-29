@@ -24,7 +24,7 @@ class TypeObject:
         #     fisbaseclass = 0
         self.id = fid
         self.code = fcode
-        self.description = cd.translateFromBase(fdescription)
+        self.description = cd.translate_from_base(fdescription)
         self.sh_name = fsh_name
         self.sort = fsort
         self.parent_id = fparent_id
@@ -37,7 +37,7 @@ class TypeObject:
     # сохранить исходные значения
         self.aid = fid
         self.acode = fcode
-        self.adescription = cd.translateFromBase(fdescription)
+        self.adescription = cd.translate_from_base(fdescription)
         self.ash_name = fsh_name
         self.asort = fsort
         self.aparent_id = fparent_id
@@ -157,7 +157,7 @@ class TypeObject:
         param = {}
         param['code'] = self.code.lower()
         param['name'] = self.sh_name
-        param['description'] = cd.translateToBase(self.description)
+        param['description'] = cd.translate_to_base(self.description)
         param['is_base_class'] = str(self.isbaseclass)
         param['is_relation'] = str(self.isrelation)
         param['ordering_index'] = self.sort

@@ -1,8 +1,27 @@
 from PyQt5.QtGui import *
 from PyQt5 import (QtWidgets, QtCore)
-from PyQt5.QtWidgets import (QWidget, QLabel)
+from PyQt5.QtWidgets import (QWidget, QLabel, QTextEdit)
 import common_data as cd
 import json
+
+
+class TextEditDelegate(QtWidgets.QStyledItemDelegate):
+    def createEditor(self, parent, options, index):
+        return QTextEdit(parent)
+
+    def setEditorData(self, editor, index):
+        editor.setText(index.data())
+
+    def setModelData(self, editor, model, index):
+        model.setData(index, editor.toPlainText())
+
+    def updateEditorGeometry(self, editor, option, index):
+        model = index.model()
+        # message = model.data(index, Qt.EditRole)
+        new_geometry = option.rect
+        new_height = 15 * option.rect.height()
+        new_geometry.setHeight(new_height)
+        editor.setGeometry(new_geometry)
 
 
 class PasportLocale(QWidget):
@@ -39,6 +58,9 @@ class PasportLocale(QWidget):
                     "    background: lightblue;"
                     "    color: black;"
                     "}")
+        delegate = TextEditDelegate(self.table)
+        self.table.setItemDelegateForColumn(3, delegate)
+        self.table.resizeColumnToContents(3)
         # выбор строки мышкой
         # self.table.pressed.connect(self.choosChange)
         # self.table.activated.connect(self.choosChange)
@@ -69,13 +91,13 @@ class PasportLocale(QWidget):
             try:
                 mas_json = json.loads(ans)
                 for j in range(0, len(mas_json)):
-                    Node = QStandardItem(cd.translateFromBase(mas_json[j]["txt"]))
+                    Node = QStandardItem(cd.translate_from_base(mas_json[j]["txt"]))
                     row = [
                         QStandardItem(""),
                         QStandardItem(mas_json[j]["locale_id"]),
                         QStandardItem(mas_json[j]["locale"]),
                         Node,
-                        QStandardItem(cd.translateFromBase(mas_json[j]["txt"]))
+                        QStandardItem(cd.translate_from_base(mas_json[j]["txt"]))
                     ]
                     # только на чтение
                     # for c in row:
@@ -130,14 +152,14 @@ class PasportLocale(QWidget):
             if int(self.value_code) <= 0:
                 # определить свободный идентификатор Locales
                 data, result = cd.send_rest('MDM.LocalesGetID')
-                self.value_code = int(cd.getTextfromAnswer(data))
+                self.value_code = int(cd.get_text_from_answer(data))
             self.statusbar.setText('languages = ' + str(self.qlanguage) + '; ID=' + str(self.value_code))
             for j in range(0, self.root_model.rowCount()):
                 ind0 = self.root_model.index(j, 0)  # колонка статуса
                 if self.root_model.data(ind0) != '':
                     ind1 = self.root_model.index(j, 1)  # колонка с locale_id
                     ind3 = self.root_model.index(j, 3)  # колонка с txt
-                    val_new = cd.translateToBase(self.root_model.data(ind3))
+                    val_new = cd.translate_to_base(self.root_model.data(ind3))
                     ans, result = cd.send_rest(
                         'MDM.LocalesSetValue/' + self.root_model.data(ind1) + '/' +
                         str(self.value_code) + '/' + val_new, 'POST')

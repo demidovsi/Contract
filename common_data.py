@@ -418,7 +418,7 @@ def load_objects():
     return result, data
 
 
-def getTextfromAnswer(txt):
+def get_text_from_answer(txt):
     result = txt.replace('[', '').replace(']', '').replace('"', '')
     return result.strip()
 
@@ -434,23 +434,23 @@ def get_value_time(t):
     return t.hour * 3600 + t.minute * 60 + t.second + t.microsecond // 1000 / 1000
 
 
-def translateFromBase(st):
+def translate_from_base(st):
     st = st.replace('~LF~', '\n').replace('~A~', '(').replace('~B~', ')').replace('~a1~', '@')
     st = st.replace('~a2~', ',').replace('~a3~', '=').replace('~a4~', '"').replace('~a5~', "'")
-    st = st.replace('~a6~', ':')
+    st = st.replace('~a6~', ':').replace('~b1~', '/')
+    return st
+
+
+def translate_to_base(st):
+    st = st.replace('\n', '~LF~').replace('(', '~A~').replace(')', '~B~').replace('@', '~a1~')
+    st = st.replace(',', '~a2~').replace('=', '~a3~').replace('"', '~a4~').replace("'", '~a5~')
+    st = st.replace(':', '~a6~').replace('/', '~b1~')
     return st
 #
 #
-# def translateToBase(st):
-#     st = st.replace('\n', '~LF~').replace('(', '~A~').replace(')', '~B~').replace('@', '~a1~')
-#     st = st.replace(',', '~a2~').replace('=', '~a3~').replace('"', '~a4~').replace("'", '~a5~')
-#     st = st.replace(':', '~a6~')
+# def translate_to_base(st):
+#     st = st.replace('\n', '~LF~').replace("'", "''").replace('"', "''")
 #     return st
-
-
-def translateToBase(st):
-    st = st.replace('\n', '~LF~').replace("'", "''").replace('"', "''")
-    return st
 
 
 def decode(key, enc):

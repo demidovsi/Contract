@@ -183,7 +183,7 @@ class PassportEntity(QWidget):
         data, result = cd.send_rest(
             'v1/object/' + cd.schema_name + '/' + self.object_code + '?param_list=' + txt, 'PUT', show_error=True)
         if result:
-            id = int(cd.getTextfromAnswer(data))
+            id = int(cd.get_text_from_answer(data))
             self.obj_id = id
             self.show_values_object()
             cd.send_evt({"command": "new_object", "object_code": self.object_code, "obj_id": self.obj_id},

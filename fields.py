@@ -162,7 +162,7 @@ class FieldInform():
         if result:
             js = json.loads(data)
             for unit in js:
-                st = cd.translateFromBase(unit["sh_name"])
+                st = cd.translate_from_base(unit["sh_name"])
                 self.object_m.addItem(st, unit)
 
     def add_combo(self, parent_layout, parameter, sh_name, object_code, code, form_parent):
@@ -264,7 +264,7 @@ class FieldInform():
             self.value = self.value.replace(":True", ': true')
             self.value = self.value.replace(" False", ' false')
             self.value = self.value.replace(":False", ': false')
-            return "'" + cd.translateToBase(self.value.replace("'", '"')) + "'"
+            return "'" + cd.translate_to_base(self.value.replace("'", '"')) + "'"
         else:
             return 'NULL'
 
@@ -287,7 +287,7 @@ class FieldInform():
         if (data_code.upper() == 'JSON') or (data_code.upper() == 'JSONB'):
             return self.txt_json()
         elif (categor == 'fString') or self.is_enum():
-            return "'" + cd.translateToBase(self.value) + "'"
+            return "'" + cd.translate_to_base(self.value) + "'"
         elif self.is_check_box():
             return cd.valueBoolean(self.value, val1='true', val0='false')
         elif self.is_date_time():
@@ -297,7 +297,7 @@ class FieldInform():
                 return 'NULL'
             else:
                 if self.value == str(self.value):
-                    return "'" + cd.translateToBase(self.value) + "'"
+                    return "'" + cd.translate_to_base(self.value) + "'"
                 else:
                     return str(self.value)
 
@@ -313,8 +313,8 @@ class FieldInform():
         if (data_code.upper() == 'JSON') or (data_code.upper() == 'JSONB'):
             self.set_value_json(value)
         if (categor == 'fString') or self.is_enum():
-            self.initial_value = cd.translateFromBase(value)
-        elif self.is_check_box():
+            self.initial_value = cd.translate_from_base(value)
+        if self.is_check_box():
             self.initial_value = value.lower() == 'true'
         else:
             self.initial_value = value

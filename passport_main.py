@@ -123,11 +123,11 @@ class PassportMain(QWidget):
         :param value:
         :return:
         """
+        pass
         for field in self.fields:
-            if field.get_value('code') == code:
+            if field.get_value('code') == code and field.object_code is None:
                 field.set_value(value)
 
     def refresh(self):
         for field in self.fields:
             field.refresh()
-

@@ -299,7 +299,7 @@ class Entities(QWidget):
                         node10 = QStandardItem()
                         node10.setTextAlignment(QtCore.Qt.AlignRight)
                         row = [
-                            QStandardItem(cd.translateFromBase(json_unit["name"])),
+                            QStandardItem(cd.translate_from_base(json_unit["name"])),
                             QStandardItem(""),
                             QStandardItem(""),
                             QStandardItem(str(json_unit["id"])),
@@ -464,12 +464,12 @@ class Entities(QWidget):
                     for mas_json in js:
                         node = QStandardItem()
                         if "sh_name" in mas_json:
-                            node.setText(cd.translateFromBase(mas_json["sh_name"]))
+                            node.setText(cd.translate_from_base(mas_json["sh_name"]))
                         else:
                             node.setText(str(mas_json["id"]))
                         node4 = QStandardItem()
                         if "code" in mas_json:
-                            node4.setText(cd.translateFromBase(str(mas_json["code"])))
+                            node4.setText(cd.translate_from_base(str(mas_json["code"])))
                         row = [
                             node,
                             QStandardItem(""),

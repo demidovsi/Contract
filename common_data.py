@@ -6,6 +6,7 @@ import requests
 from requests.exceptions import HTTPError
 import base64
 import time
+import datetime
 
 kirill = 'Kirill!981'
 version = ' (v1.1.1 2022-10-) '
@@ -238,9 +239,9 @@ def send_rest_full(mes, dir="GET", params=None, lang='', show_error=True, tokenu
         return response.text, response.ok, '<' + str(response.status_code) + '> - ' + response.reason
 
 
-def send_rest(mes, dir="GET", params=None, lang='', show_error=True, tokenuser=None):
+def send_rest(mes, directive="GET", params=None, lang='', show_error=True, tokenuser=None):
     txt, result, status_code = send_rest_full(
-        mes, dir=dir, params=params, lang=lang, show_error=show_error, tokenuser=tokenuser)
+        mes, dir=directive, params=params, lang=lang, show_error=show_error, tokenuser=tokenuser)
     return txt, result
 
 
@@ -435,22 +436,25 @@ def get_value_time(t):
 
 
 def translate_from_base(st):
-    st = st.replace('~LF~', '\n').replace('~A~', '(').replace('~B~', ')').replace('~a1~', '@')
-    st = st.replace('~a2~', ',').replace('~a3~', '=').replace('~a4~', '"').replace('~a5~', "'")
-    st = st.replace('~a6~', ':').replace('~b1~', '/')
-    return st
+    if st is not None:
+        if type(st) == str:
+            st = st.replace('~LF~', '\n').replace('~A~', '(').replace('~B~', ')').replace('~a1~', '@')
+            st = st.replace('~a2~', ',').replace('~a3~', '=').replace('~a4~', '"').replace('~a5~', "'")
+            st = st.replace('~a6~', ':').replace('~b1~', '/')
+        return str(st)
+    else:
+        return ''
 
 
 def translate_to_base(st):
-    st = st.replace('\n', '~LF~').replace('(', '~A~').replace(')', '~B~').replace('@', '~a1~')
-    st = st.replace(',', '~a2~').replace('=', '~a3~').replace('"', '~a4~').replace("'", '~a5~')
-    st = st.replace(':', '~a6~').replace('/', '~b1~')
-    return st
-#
-#
-# def translate_to_base(st):
-#     st = st.replace('\n', '~LF~').replace("'", "''").replace('"', "''")
-#     return st
+    if st is not None:
+        if type(st) == str:
+            st = st.replace('\n', '~LF~').replace('(', '~A~').replace(')', '~B~').replace('@', '~a1~')
+            st = st.replace(',', '~a2~').replace('=', '~a3~').replace('"', '~a4~').replace("'", '~a5~')
+            st = st.replace(':', '~a6~').replace('/', '~b1~')
+        return str(st)
+    else:
+        return ''
 
 
 def decode(key, enc):
@@ -502,4 +506,90 @@ def show_error_answer(ans, caption_text, detail_text='', onlyok=False):
         detail_text = detail_text + '\n' + f"{err}"
         QApplication.restoreOverrideCursor()  # вернуть нормальный курсор
         make_question(None, caption_text + ': ' + detail_text, caption_text, ans, onlyok)
+    return result
+
+
+def valFromMas(value, mas_json):
+    if value in mas_json:
+        return mas_json[value]
+
+
+def get_boolean_from_dict(key, dict):
+    """
+    перевод величины из словаря (True, False или 1,0 или "True', "False") в булево значение
+    :param key: - ключ параметра словаря со значением
+    :param dict: - словарь
+    :return: - значение указанного ключа словаря или False
+    """
+    if key in dict:
+        value = dict[key]
+        if type(value) == int:
+            return value == 1
+        elif type(value) == bool:
+            return value
+        elif type(value) == str:
+            return value.upper() == 'TRUE'
+        else:
+            return False
+    else:
+        return False
+
+
+def local_utc(local: datetime) -> datetime:
+    """  Перевод local: datetime из локального времени в UTC: datetime """
+    epoch = time.mktime(local.timetuple())
+    offset = datetime.datetime.fromtimestamp(epoch) - datetime.datetime.utcfromtimestamp(epoch)
+    return local - offset
+
+
+def utc_local(utc: datetime) -> datetime:
+    epoch = time.mktime(utc.timetuple())
+    offset = datetime.datetime.fromtimestamp(epoch) - datetime.datetime.utcfromtimestamp(epoch)
+    return utc + offset
+
+
+def getTextfromAnswer(txt):
+    result = txt.replace('[', '').replace(']', '').replace('"', '')
+    return result.strip()
+
+
+def getpole(txt, separator=';'):
+    k = txt.partition(separator)
+    return k[0], k[2]
+
+
+def str1000(number, sep=' '):
+    """
+    вывод целого значения числа с разделением по тысячам (три знака) через указанную строку (по умолчанию - пробел)
+        :param number: значение целого числа
+    :param sep: - разделитель между тройками цифр
+    :return: возвращается строка, типа 123 456 789
+    """
+    if number is None:
+        return ''
+    if type(number) == int or type(number) == str or type(number) == numpy.int32:
+        n = str(number)[::-1]
+        return sep.join(n[i:i+3] for i in range(0, len(n), 3))[::-1]
+    return str(number)
+
+
+def getInd(model, val, col, value_child=''):  # model это  QStandardItemModel
+    result = model.index(0, 0)
+    try:
+        for i in range(0, model.rowCount()):
+            ind = model.index(i, col)
+            if model.data(ind) == val:
+                result = ind
+                if value_child != '':
+                    ind = model.index(i, 0)
+                    item = model.itemFromIndex(ind)  # 0-го уровня заданной колонки (или 0-й колонки)
+                    if item.hasChildren():  # найден 0-ой уровень и есть дети
+                        for j in range(0, item.rowCount()):
+                            ind = item.child(j).index()
+                            if model.data(ind.sibling(ind.row(), col)) == value_child:
+                                result = ind
+                                break
+                break
+    except:
+        pass
     return result

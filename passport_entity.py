@@ -10,10 +10,14 @@ import pagecontrol
 # import pasport_relation
 # import pasport_historicals
 # import pasport_locale
+import type_param
 import json
 import array_json
 import passport_main
 import passport_locale
+import passport_reference
+import passport_history
+import passport_relation
 
 
 class PassportEntity(QWidget):
@@ -23,6 +27,9 @@ class PassportEntity(QWidget):
     obj_id = None
     passport_main = None
     passport_locales = list()
+    passport_references = list()
+    passport_histories = list()
+    passport_relations = list()
 
     def __init__(self, parent, form_parent):
         super(QWidget, self).__init__()
@@ -53,17 +60,12 @@ class PassportEntity(QWidget):
 # Страница "Main"
         self.tabMain = self.page_control.addTab('')
         self.layout_main = QtWidgets.QVBoxLayout(self.tabMain)
-        # scrollarea = QScrollArea()
-        # content_widget = QtWidgets.QWidget()
-        # scrollarea.setWidget(content_widget)
-        # scrollarea.setWidgetResizable(True)
-        # self.layout_main = QtWidgets.QVBoxLayout(scrollarea)
-
         self.layout = QtWidgets.QVBoxLayout(parent)
         self.layout.addLayout(self.layoutButton)
         self.layout.addWidget(self.page_control)
         self.change_language()
         self.passport_locales = []
+        self.passport_references = []
 
     def change_language(self):
         self.page_control.tabs.setTabText(0, cd.get_text('Main', id_text=1, key='passport'))
@@ -77,10 +79,13 @@ class PassportEntity(QWidget):
         data, result = cd.send_rest('v1/MDM/params/' + cd.schema_name + '?object_code=' + object_code)
         if result:
             self.parameters = array_json.TArrayJson(json.loads(data))
-            # print(self.parameters.get_count())
 
     def show_data(self, obj_id):
         self.obj_id = obj_id
+        self.passport_histories = []
+        self.passport_locales = []
+        self.passport_relations = []
+        self.passport_references = []
         self.refresh_button.setVisible(obj_id != '0')
         if self.passport_main is not None:
             self.passport_main.clear()
@@ -92,9 +97,49 @@ class PassportEntity(QWidget):
             parameter = self.parameters.get_unit(i)
             if parameter['data_code'].upper() == 'LOCALIZEDTEXT':
                 tab = self.page_control.addTab('Locale: ' + parameter['code'])
-                form = passport_locale.PasportLocale(tab, self, 'Locale: ' + parameter['code'])
+                form = passport_locale.PassportLocale(tab, self, 'Locale: ' + parameter['code'])
                 self.passport_locales.append(form)
+        # создать формы REFERENCE
+        for i in range(self.parameters.get_count()):
+            parameter = self.parameters.get_unit(i)
+            data = type_param.TTypeParam(parameter)
+            if parameter['data_code'].upper() == 'REFERENCE':
+                tab = self.page_control.addTab(data.sh_name)
+                form = passport_reference.PassportReference(tab, self, parameter['code'])
+                form.show_data(parameter)
+                self.passport_references.append(form)
+        # создать формы истории
+        for i in range(self.parameters.get_count()):
+            parameter = self.parameters.get_unit(i)
+            if parameter['info_code'].upper() == 'HIS':
+                data = type_param.TTypeParam(parameter)
+                tab = self.page_control.addTab(data.sh_name)
+                form = passport_history.PassportHistory(tab, self)
+                form.data = data
+                form.value_code = obj_id
+                form.caption = data.sh_name
+                form.typeobj_code = self.object_code  # собственный тип объекта
+                form.code = data.code
+                self.passport_histories.append(form)
+        # создать формы RELATION
+        for i in range(self.parameters.get_count()):
+            parameter = self.parameters.get_unit(i)
+            if parameter["data_code"] == 'Relation':
+                data = type_param.TTypeParam(parameter)
+                tab = self.page_control.addTab(data.sh_name)
+                form = passport_relation.PassportRelation(tab, self)
+                form.caption = data.sh_name
+                form.rel_typeobj_code = data.code_ref  # тип объекта связи
+                form.typeobj_code = self.object_code  # собственный тип объекта
+                form.rel_code = data.code
+                form.code = 'id'
+                form.value_code = obj_id
+                form.show_list()
+                form.show_data()
+                self.passport_relations.append(form)
+
         self.show_values_object()
+        self.passport_main.exist = True
 
     def show_values_object(self):
         # прочитать значения полей объекта
@@ -103,6 +148,12 @@ class PassportEntity(QWidget):
         js = json.loads(data)[0]  # исходные значения
         for key in js.keys():
             self.passport_main.set_value(key, js[key])
+        for form in self.passport_references:
+            form.set_value_reference(js)
+            form.show_references()
+        for form in self.passport_histories:
+            form.show_data()
+
         # заполнить Locale
         for i in range(self.parameters.get_count()):
             parameter = self.parameters.get_unit(i)
@@ -113,7 +164,6 @@ class PassportEntity(QWidget):
                         form.value_code = js[parameter['code']] if parameter['code'] in js else 0
                         form.show_data()
                         break
-
         self.is_need_to_save()
 
     def close_button_click(self):
@@ -125,6 +175,18 @@ class PassportEntity(QWidget):
     def what_changed(self, show_mes=True):
         result = self.passport_main.what_changed()
         for form in self.passport_locales:
+            st = form.what_changed()
+            if st != '':
+                result = result + st + '\n'
+        for form in self.passport_references:
+            st = form.what_changed()
+            if st != '':
+                result = result + st + '\n'
+        for form in self.passport_histories:
+            st = form.what_changed()
+            if st != '':
+                result = result + st + '\n'
+        for form in self.passport_relations:
             st = form.what_changed()
             if st != '':
                 result = result + st + '\n'
@@ -173,6 +235,10 @@ class PassportEntity(QWidget):
                         form.save()
                         st = str(form.value_code)
                         break
+            elif parameter['data_code'].upper() == 'REFERENCE':
+                for form in self.passport_references:
+                    if form.caption == parameter['code']:
+                        st = str(form.get_id())
             else:
                 st = self.passport_main.get_text_sql(parameter['code'])
             if st is not None and st != '':
@@ -184,6 +250,14 @@ class PassportEntity(QWidget):
             'v1/object/' + cd.schema_name + '/' + self.object_code + '?param_list=' + txt, 'PUT', show_error=True)
         if result:
             id = int(cd.get_text_from_answer(data))
+            # спасти изменения в исторических данных
+            for form in self.passport_histories:
+                form.value_code = str(id)
+                form.save()
+            # спасти изменения в RELATION
+            for form in self.passport_relations:
+                form.value_code = str(id)
+                form.save()
             self.obj_id = id
             self.show_values_object()
             cd.send_evt({"command": "new_object", "object_code": self.object_code, "obj_id": self.obj_id},
@@ -194,4 +268,24 @@ class PassportEntity(QWidget):
         self.passport_main.refresh()
         for form in self.passport_locales:
             form.refresh()
+        for form in self.passport_references:
+            form.refresh()
+        for form in self.passport_histories:
+            form.refresh()
+        for form in self.passport_relations:
+            form.refresh()
         self.is_need_to_save()
+
+    def customEvent(self, evt):
+        if evt.type() == cd.StatusOperation.idType:  # изменение состояния соединения PROXY
+            n = evt.get_data()
+            if n == cd.evt_change_language:
+                self.change_language()
+                for form in self.passport_relations:
+                    cd.send_evt(n, form)
+                for form in self.passport_locales:
+                    cd.send_evt(n, form)
+                for form in self.passport_histories:
+                    cd.send_evt(n, form)
+                for form in self.passport_references:
+                    cd.send_evt(n, form)

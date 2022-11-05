@@ -214,8 +214,9 @@
     {"id": 14, "text": "Target"},
     {"id": 15, "text": "Recording Historical value"},
     {"id": 16, "text": "Copying historical value"},
-    {"id": 17, "text": "Last value"}
-  ],
+    {"id": 17, "text": "Last value"},
+    {"id": 18, "text": "What to output"}
+],
   "relations": [
     {"id": 1, "text": "Link tables"},
     {"id": 2, "text": "Reading information on link tables"},

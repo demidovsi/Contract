@@ -23,13 +23,13 @@ def define_reference(parameters, index):
             js = json.loads(data)
             for unit in js:
                 if unit['data_code'].upper() == 'REFERENCE':
-                    return {"code_ref": unit['code_ref'], "code": unit['code']}
+                    return {"object_code": unit['code_ref'], "code": unit['code']}
 
     array_reference = list()
-    unit = {"code_ref": parameters.get_value(index, 'code_ref'), "code": parameters.get_value(index, 'code')}
+    unit = {"object_code": parameters.get_value(index, 'code_ref'), "code": parameters.get_value(index, 'code')}
     while unit is not None:
         array_reference.append(unit)
-        unit = get_unit(unit["code_ref"])
+        unit = get_unit(unit["object_code"])
     return array_reference
 
 
@@ -42,6 +42,7 @@ class PassportMain(QWidget):
     obj_id = None
     fields = list()
     array_reference = list()
+    exist = False
 
     def __init__(self, form_parent, parent_layout, parameters, object_code, obj_id):
         self.parameters = parameters
@@ -50,33 +51,18 @@ class PassportMain(QWidget):
         self.obj_id = obj_id
         self.parent_layout = parent_layout
         self.fields = []
+        out_number = 0
         for i in range(parameters.get_count()):
             st = parameters.get_value(i, 'data_code')
             if st is not None:
                 st = st.upper()
-            if st == 'REFERENCE':
-                self.array_reference = define_reference(parameters, i)
-                print(self.array_reference)
-                i = len(self.array_reference) - 1
-                code_parent = ''
-                while i >= 0:
-                    field = fields.FieldInform()
-                    field.add_combo(parent_layout, parameters.get_unit(i),
-                                    self.array_reference[i]["code"], self.array_reference[i]["code_ref"],
-                                    code_parent, self)
-                    self.fields.append(field)
-                    code_parent = self.array_reference[i]["code"]
-                    i -= 1
-                continue
-            if st == 'RELATION' or st == 'LOCALIZEDTEXT':
+            if st == 'RELATION' or st == 'LOCALIZEDTEXT' or st == 'REFERENCE':
                 continue
             st = parameters.get_value(i, 'info_code')
             if st is not None:
                 st = st.upper()
             if st != 'NSI':
                 continue
-            # if parameters.get_value(i, 'code') == 'id':
-            #     continue
             field = fields.FieldInform()
             field.add(parent_layout, parameters.get_unit(i), self)
             self.fields.append(field)
@@ -100,6 +86,8 @@ class PassportMain(QWidget):
     def what_error(self):
         result = ''
         for field in self.fields:
+            if field.parameter is None:
+                continue
             if field.parameter['not_null'] == 'true':
                 if field.value is None:
                     result = result + cd.get_text("не задано значение", id_text=13, key='entities') + " " +\
@@ -125,9 +113,14 @@ class PassportMain(QWidget):
         """
         pass
         for field in self.fields:
-            if field.get_value('code') == code and field.object_code is None:
+            if field.object_code is None and field.get_value('code') == code:
                 field.set_value(value)
+                break
 
     def refresh(self):
+        self.exist = False
         for field in self.fields:
-            field.refresh()
+            if field.data is not None:
+                field.refresh()
+        self.exist = True
+

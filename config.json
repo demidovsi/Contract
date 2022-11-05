@@ -9,18 +9,18 @@
         "password": "contract_admin"
     },
     {
-        "name": "Contract",
+        "name": "BMS",
         "url": "http://159.223.0.234:5000/",
-        "schema_name": "contract",
+        "schema_name": "bms",
         "info_code": "nsi",
         "interval": 30,
-        "user_name": "contract_developer",
-        "password": "contract_developer"
+        "user_name": "Superadmin",
+        "password": "Kirill!981"
     },
     {
         "name": "Локальный админ",
-        "url": "http://127.0.0.1:5001/",
-        "schema_name": "contract",
+        "url": "http://127.0.0.1:5000/",
+        "schema_name": "bms",
         "info_code": "nsi",
         "interval": 30,
         "user_name": "Superadmin",

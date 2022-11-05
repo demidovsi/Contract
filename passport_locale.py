@@ -24,7 +24,7 @@ class TextEditDelegate(QtWidgets.QStyledItemDelegate):
         editor.setGeometry(new_geometry)
 
 
-class PasportLocale(QWidget):
+class PassportLocale(QWidget):
     caption = ''
     code = ''
     value_code = -1  # значение идентификатора локализации

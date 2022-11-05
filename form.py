@@ -244,24 +244,16 @@ class Form(QMainWindow):
                     cd.version + cd.url + ' ' + cd.inform_from_proxy.replace("'", '"') +
                     ' System=' + cd.schema_name)
                 self.entities.make_obnov_click()
-                # self.one_day_form.define_rashod_id()
-                # self.one_day_form.read_data()
-                # self.summary_form.read_data()
                 self.page_control_changed(self.page_control.tabs.currentIndex())
             elif n == cd.evt_change_config_modeler:  # изменения в настройке моделера
                 self.set_window_title(
                     cd.version + cd.url + ' ' + cd.inform_from_proxy.replace("'", '"') + ' System=' + cd.schema_name)
                 self.entities.close_all_forms()
                 self.entities.make_obnov_click()
-                # cd.send_evt(n, self.one_day_form)
-                # self.one_day_form.read_data()
-                # self.summary_form.read_data()
             elif n == cd.evt_change_language:
                 self.change_language()
                 cd.send_evt(n, self.config_modeler)
-                self.entities.change_language()
-                # cd.send_evt(n, self.one_day_form)
-                # cd.send_evt(n, self.summary_form)
+                cd.send_evt(n, self.entities)
             elif type(n) == dict:
                 # cd.send_evt(n, self.one_day_form)
                 self.page_control.setCurrentIndex(1)

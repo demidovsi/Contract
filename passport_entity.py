@@ -76,7 +76,7 @@ class PassportEntity(QWidget):
     def load_params(self, object_code):
         # прочитать состав параметров класса объектов (object_code) из приложения (app_code)
         self.object_code = object_code
-        data, result = cd.send_rest('v1/MDM/params/' + cd.schema_name + '?object_code=' + object_code)
+        data, result = cd.send_rest('v1/params/' + cd.schema_name + '?object_code=' + object_code)
         if result:
             self.parameters = array_json.TArrayJson(json.loads(data))
 

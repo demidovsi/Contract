@@ -17,7 +17,7 @@ import array_json
 
 def define_reference(parameters, index):
     def get_unit(object_code):
-        data, result = cd.send_rest('v1/MDM/params/' + cd.schema_name + '?object_code=' + object_code,
+        data, result = cd.send_rest('v1/params/' + cd.schema_name + '?object_code=' + object_code,
                                     show_error=False)
         if result:
             js = json.loads(data)

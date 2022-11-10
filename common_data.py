@@ -9,7 +9,7 @@ import time
 import datetime
 
 kirill = 'Kirill!981'
-version = ' (v1.1.1 2022-10-) '
+version = ' (v1.1.2 2022-11-10) '
 settings = None
 
 app_lang = 'en'

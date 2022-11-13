@@ -10,7 +10,7 @@ import datetime
 import numpy
 
 kirill = 'Kirill!981'
-version = ' (v1.1.2 2022-11-10) '
+version = ' (v1.1.3 2022-11-) '
 settings = None
 
 app_lang = 'en'

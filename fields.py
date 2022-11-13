@@ -280,7 +280,7 @@ class FieldInform():
             dt = self.object_m.dateTime().toPyDateTime()
             dt = str(dt.year) + '-' + str(dt.month) + '-' + str(dt.day) + ' ' + \
                  str(dt.hour) + ':' + str(dt.minute) + ':' + str(dt.second)
-            return '"' + dt + '"'
+            return "'" + dt + "'"
         else:
             return 'NULL'
 

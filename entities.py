@@ -107,8 +107,9 @@ class Entities(QWidget):
         self.row_count = cd.define_object(QSpinBox(), layout_rows, self.change_row, minimum=1, maximum=1000, value=1000)
         cd.define_object(QLabel("sort by="), layout_rows)
         self.field_sorting = cd.define_object(QComboBox(), layout_rows, self.change_row)
-        self.field_sorting.addItem('id')
         self.field_sorting.addItem('sh_name')
+        self.field_sorting.addItem('id')
+        self.field_sorting.currentIndexChanged.connect(self.make_obnov_click)
         cd.define_object(QLabel('where='), layout_rows)
         self.text_where = QLineEdit()
         self.text_where.textChanged.connect(self.change_row)
@@ -423,27 +424,6 @@ class Entities(QWidget):
             if self.root_model.data(modal_index.parent()):
                 self.create_passport()
 
-
-    def isTop(self):
-        return self.arow == 0
-
-    def isBottom(self):
-        return self.arow == self.qrow - 1
-
-    def down_click(self):
-        # перейти на следующий объект
-        self.selected_ind = self.selected_ind.sibling(self.arow+1, 0)
-        self.selection_change(self.selected_ind)
-        self.table.setCurrentIndex(self.selected_ind)
-        self.create_passport()
-
-    def up_click(self):
-        # перейти на предыдущий объект
-        self.selected_ind = self.selected_ind.sibling(self.arow-1, 0)
-        self.selection_change(self.selected_ind)
-        self.table.setCurrentIndex(self.selected_ind)
-        self.create_passport()
-
     def show_data(self):
         if self.exist:
             item = self.root_model.item(self.ind0.row(), 0)
@@ -458,7 +438,7 @@ class Entities(QWidget):
             ind2 = self.root_model.sibling(QModalIndex.row(), 4, QModalIndex)
             object_code = self.root_model.data(ind2)
             st = 'v1/content/' + cd.schema_name + '/' + object_code + '?row_from=' + str(self.row_from.value()) + \
-                 '&row_count=' + str(self.row_count.value()) + '&column_name=' + self.field_sorting.currentText()
+                 '&row_count=' + str(self.row_count.value()) + '&column_order=' + self.field_sorting.currentText()
             if self.text_where.text() != '':
                 st = st + '&where=' + self.text_where.text()
             ans, result = cd.send_rest(st)
@@ -608,10 +588,13 @@ class Entities(QWidget):
 
     def delete_row(self, object_code, obj_id):
         parent = None
+        parent_row = None
+        row = None
         for i in range(0, self.root_model.rowCount()):
             ind = self.root_model.index(i, 0)
             if self.root_model.data(ind) == object_code:
                 parent = ind
+                parent_row = i
                 item = self.root_model.itemFromIndex(ind)  # 0-го уровня заданной колонки (или 0-й колонки)
                 for j in range(0, item.rowCount()):
                     ind = item.child(j).index()
@@ -620,8 +603,29 @@ class Entities(QWidget):
                         break
                 break
         self.exist = False
-        self.root_model.removeRow(row, parent)
+        if row is not None:
+            self.root_model.removeRow(row, parent)
+        if parent_row is not None:
+            ind = self.root_model.index(parent_row, 5)
+            value = self.root_model.data(ind)
+            if value is not None and value != '':
+                value = int(value) - 1
+                self.root_model.setData(ind, str(value))
         self.exist = True
+
+    def make_delete_pasport(self):
+        for i in range(self.page_control.tabs.count()):
+            title = self.page_control.tabs.tabText(i).split(':')
+            object_code = title[0].strip()
+            obj_id = title[1].strip()
+            ans, result = cd.send_rest('Entity.GetValues/' + object_code + '/' + obj_id + '?schema_name=' + \
+                                       cd.schema_name)
+            if result:
+                ans = json.loads(ans)
+                if 'id' not in ans[0]:
+                    self.delete_row(object_code, obj_id)
+                    self.close_page(object_code, obj_id)
+
 
     def customEvent(self, evt):
         if evt.type() == cd.StatusOperation.idType:  # изменение состояния соединения PROXY
@@ -631,8 +635,9 @@ class Entities(QWidget):
                     if n["command"] == "close_page":
                         self.close_page(n["object_code"], str(n["obj_id"]))
                     elif n["command"] == "delete_page":
-                        self.close_page(n["object_code"], str(n["obj_id"]))
-                        self.delete_row(n["object_code"], str(n["obj_id"]))
+                        self.make_delete_pasport()
+                        # self.close_page(n["object_code"], str(n["obj_id"]))
+                        # self.delete_row(n["object_code"], str(n["obj_id"]))
                     elif n["command"] == "new_object":
                         title_current = n["object_code"] + ': 0'
                         title = n["object_code"] + ': ' + str(n["obj_id"])
@@ -647,12 +652,16 @@ class Entities(QWidget):
 
     def next_click(self):
         if self.exist:
+            self.exist = False
             self.row_from.setValue(self.row_from.value() + self.row_count.value())
+            self.exist = True
             self.change_row()
 
     def previous_click(self):
         if self.exist:
-            QSpinBox(self.row_from).setValue(QSpinBox(self.row_from).value() - QSpinBox(self.row_count).value())
+            self.exist = False
+            self.row_from.setValue(self.row_from.value() - self.row_count.value())
+            self.exist = True
             self.change_row()
 
     def change_row(self):

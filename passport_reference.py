@@ -48,6 +48,7 @@ class PassportReference(QWidget):
             field.reference = unit
             out_number += 1
             field.add_combo(self.layout, parameter, unit["code"], unit["object_code"], code_parent, self)
+            field.object_m.setEditable(True)
             self.fields.append(field)
             code_parent = unit["code"]
             i -= 1

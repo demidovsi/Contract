@@ -20,7 +20,7 @@
     {
         "name": "Локальный админ",
         "url": "http://127.0.0.1:5000/",
-        "schema_name": "bms",
+        "schema_name": "contract",
         "info_code": "nsi",
         "interval": 30,
         "user_name": "Superadmin",

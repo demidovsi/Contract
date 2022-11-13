@@ -289,6 +289,8 @@ class FieldInform():
         Получение значения свойства в виде текста для формирования строки параметров для PUT v1/object
         :return:
         """
+        if self.value is None:
+            return 'NULL'
         if self.data.type_data_code.upper() in ['JSON','JSONB']:
             return self.txt_json()
         elif (self.data.category == 'fString') or self.is_enum():
@@ -298,13 +300,10 @@ class FieldInform():
         elif self.is_date_time():
             return self.txt_date_time()
         else:
-            if self.value is None:
-                return 'NULL'
+            if self.value == str(self.value):
+                return "'" + cd.translate_to_base(self.value) + "'"
             else:
-                if self.value == str(self.value):
-                    return "'" + cd.translate_to_base(self.value) + "'"
-                else:
-                    return str(self.value)
+                return str(self.value)
 
     def set_value_json(self, value):
         self.initial_value = str(value)

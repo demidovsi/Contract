@@ -135,7 +135,7 @@ class PassportReference(QWidget):
         self.exist = True
 
     def get_id(self):
-        if int(self.fields[-1].value) > 0:
+        if self.fields[-1].value is not None and int(self.fields[-1].value) > 0:
             return self.fields[-1].value
         else:
             return 'null'

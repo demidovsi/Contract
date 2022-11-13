@@ -98,9 +98,12 @@
     {"id": 12, "text": "Down"},
     {"id": 13, "text": "value not set"},
     {"id": 14, "text": "Save object entity changes"},
-    {"id": 15, "text": "There are changes"}
+    {"id": 15, "text": "There are changes"},
+    {"id": 16, "text": "Delete object instance"},
+    {"id": 17, "text": "Deleting an instance of an object"},
+    {"id": 18, "text": "Deleting an instance of an object class and all objects associated with it"}
 
-    ],
+  ],
  "modeler": [
     {"id": 1, "text": "Object class"},
     {"id": 2, "text": "Property"},

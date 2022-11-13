@@ -7,6 +7,7 @@ from requests.exceptions import HTTPError
 import base64
 import time
 import datetime
+import numpy
 
 kirill = 'Kirill!981'
 version = ' (v1.1.2 2022-11-10) '
@@ -560,10 +561,10 @@ def getpole(txt, separator=';'):
 
 def str1000(number, sep=' '):
     """
-    вывод целого значения числа с разделением по тысячам (три знака) через указанную строку (по умолчанию - пробел)
-        :param number: значение целого числа
-    :param sep: - разделитель между тройками цифр
-    :return: возвращается строка, типа 123 456 789
+    Вывод целого значения числа с разделением по тысячам (три знака) через указанную строку (по умолчанию - пробел).
+        :param number: значение целого числа,
+        :param sep: - разделитель между тройками цифр,
+        :return: возвращается строка, типа 123 456 789.
     """
     if number is None:
         return ''

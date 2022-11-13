@@ -15,6 +15,7 @@ class Entities(QWidget):
     selected_text0 = None  # sh_name типа объектоа
     selected_text1 = None  # sh_name объектов в типе
     object_code = ''
+    class_id = None
     exist = False
     exist_table = False
     exist_izm = 0
@@ -401,6 +402,10 @@ class Entities(QWidget):
                 self.selected_text0 = self.root_model.data(self.ind0)  # нулевой уровень
                 self.selected_ind = modal_index.sibling(modal_index.row(), 0)
                 self.selected_text1 = self.root_model.data(self.selected_ind)
+
+                item = self.root_model.item(ind.row(), 3)  # id колонка родителя
+                ind1 = self.root_model.indexFromItem(item)  # индекс id колонки родителя
+                self.class_id = self.root_model.data(ind1)
             else:
                 self.ind0 = modal_index.sibling(modal_index.row(), 0)
                 if self.selected_text0 != self.root_model.data(self.ind0):
@@ -513,6 +518,7 @@ class Entities(QWidget):
                 form = passport_entity.PassportEntity(tab, self)
                 self.forms.append(form)
                 form.load_params(self.object_code)
+                form.class_id = self.class_id
                 form.show_data(obj_id)
                 self.page_control.setCurrentIndex(self.page_control.tabs.count() - 1)
         except Exception as err:
@@ -587,23 +593,46 @@ class Entities(QWidget):
         cd.settings.setValue("entities_splitter_height", spis[1])
         QApplication.quit()
 
+    def close_page(self, object_code, obj_id):
+        title = object_code + ': ' + obj_id
+        for i in range(self.page_control.tabs.count()):
+            if self.page_control.tabs.tabText(i) == title:
+                self.page_control.tabs.removeTab(i)
+                break
+        for i in range(len(self.forms)):
+            form = self.forms[i]
+            if form.object_code == object_code and str(form.obj_id) == obj_id:
+                self.forms.pop(i)
+                del form
+                break
+
+    def delete_row(self, object_code, obj_id):
+        parent = None
+        for i in range(0, self.root_model.rowCount()):
+            ind = self.root_model.index(i, 0)
+            if self.root_model.data(ind) == object_code:
+                parent = ind
+                item = self.root_model.itemFromIndex(ind)  # 0-го уровня заданной колонки (или 0-й колонки)
+                for j in range(0, item.rowCount()):
+                    ind = item.child(j).index()
+                    if self.root_model.data(ind.sibling(ind.row(), 3)) == obj_id:
+                        row = j
+                        break
+                break
+        self.exist = False
+        self.root_model.removeRow(row, parent)
+        self.exist = True
+
     def customEvent(self, evt):
         if evt.type() == cd.StatusOperation.idType:  # изменение состояния соединения PROXY
             n = evt.get_data()
             if type(n) == dict:
                 if "command" in n:
                     if n["command"] == "close_page":
-                        title = n["object_code"] + ': ' + str(n["obj_id"])
-                        for i in range(self.page_control.tabs.count()):
-                            if self.page_control.tabs.tabText(i) == title:
-                                self.page_control.tabs.removeTab(i)
-                                break
-                        for i in range(len(self.forms)):
-                            form = self.forms[i]
-                            if form.object_code == n["object_code"] and form.obj_id == n['obj_id']:
-                                self.forms.pop(i)
-                                del form
-                                break
+                        self.close_page(n["object_code"], str(n["obj_id"]))
+                    elif n["command"] == "delete_page":
+                        self.close_page(n["object_code"], str(n["obj_id"]))
+                        self.delete_row(n["object_code"], str(n["obj_id"]))
                     elif n["command"] == "new_object":
                         title_current = n["object_code"] + ': 0'
                         title = n["object_code"] + ': ' + str(n["obj_id"])

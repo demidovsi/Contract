@@ -1,8 +1,8 @@
 """
 Форма паспорта объекта класса объектов
 """
-from PyQt5.QtWidgets import (QWidget, QScrollArea, QTabWidget, QMessageBox)
-from PyQt5 import (QtWidgets, QtGui, QtCore)
+from PyQt5.QtWidgets import (QWidget, QTabWidget, QMessageBox)
+from PyQt5 import (QtWidgets, QtGui)
 import common_data as cd
 # import typeparam
 # import fieldinform
@@ -24,6 +24,7 @@ class PassportEntity(QWidget):
     form_parent = None
     parameters = None  # описание параметров класса объектов
     object_code = None
+    class_id = None
     obj_id = None
     passport_main = None
     passport_locales = list()
@@ -57,6 +58,12 @@ class PassportEntity(QWidget):
         self.layoutButton.addWidget(self.close_button)
         self.close_button.clicked.connect(self.close_button_click)
 
+        self.layoutButton.addWidget(QtWidgets.QLabel(), 5)
+
+        self.delete_button = QtWidgets.QPushButton('Delete')
+        self.layoutButton.addWidget(self.delete_button)
+        self.delete_button.clicked.connect(self.delete_button_click)
+
 # Страница "Main"
         self.tabMain = self.page_control.addTab('')
         self.layout_main = QtWidgets.QVBoxLayout(self.tabMain)
@@ -82,6 +89,7 @@ class PassportEntity(QWidget):
 
     def show_data(self, obj_id):
         self.obj_id = obj_id
+        self.delete_button.setEnabled(self.obj_id != '0')
         self.passport_histories = []
         self.passport_locales = []
         self.passport_relations = []
@@ -169,6 +177,20 @@ class PassportEntity(QWidget):
     def close_button_click(self):
         cd.send_evt({"command": "close_page", "object_code": self.object_code, "obj_id": self.obj_id}, self.form_parent)
 
+    def delete_button_click(self):
+        if cd.make_question(
+                self,
+                cd.get_text('Удалить экземпляр объекта', key='entities', id_text=16) + ' id=' + str(self.obj_id) +
+                ' entity [' + self.object_code + '] ?',
+                cd.get_text('Удаление экземпляра объекта', key='entities', id_text=17),
+                cd.get_text('Удаление экземпляра класса объектов и всех связанных с ним объектов', key='entities', id_text=18)):
+
+            data, result = cd.send_rest(
+                'v1/object/' + str(self.class_id) + '/' + str(self.obj_id), 'DELETE', show_error=True)
+            if result:
+                cd.send_evt({"command": "delete_page", "object_code": self.object_code, "obj_id": self.obj_id},
+                            self.form_parent)
+
     def what_changed_click(self):
         self.what_changed()
 
@@ -229,6 +251,7 @@ class PassportEntity(QWidget):
         txt = ''
         for i in range(self.parameters.get_count()):
             parameter = self.parameters.get_unit(i)
+            st = None
             if parameter['data_code'].upper() == 'LOCALIZEDTEXT':
                 for form in self.passport_locales:
                     if form.caption == 'Locale: ' + parameter['code']:
@@ -249,16 +272,17 @@ class PassportEntity(QWidget):
         data, result = cd.send_rest(
             'v1/object/' + cd.schema_name + '/' + self.object_code + '?param_list=' + txt, 'PUT', show_error=True)
         if result:
-            id = int(cd.get_text_from_answer(data))
+            ident = int(cd.get_text_from_answer(data))
             # спасти изменения в исторических данных
             for form in self.passport_histories:
-                form.value_code = str(id)
+                form.value_code = str(ident)
                 form.save()
             # спасти изменения в RELATION
             for form in self.passport_relations:
-                form.value_code = str(id)
+                form.value_code = str(ident)
                 form.save()
-            self.obj_id = id
+            self.obj_id = ident
+            self.delete_button.setEnabled(True)
             self.show_values_object()
             cd.send_evt({"command": "new_object", "object_code": self.object_code, "obj_id": self.obj_id},
                         self.form_parent)
